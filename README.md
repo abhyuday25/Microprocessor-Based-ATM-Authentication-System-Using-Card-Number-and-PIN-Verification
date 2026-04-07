@@ -58,7 +58,8 @@ The `ATMController` executes a validation routine:
 ![Access Granted on Correct pin](./assets/granted.png)
 
 ---
-
+### Access Denied on Incorrect pin
+![Access Granted on Correct pin](./assets/denied.png)
 ---
 ### Tinkercad Circuit
 ![Tinkercad circuit](./assets/tinkercad.png)
