@@ -1,0 +1,22 @@
+{
+  "name": "atm-simulation-refactor",
+  "version": "1.0.0",
+  "description": "Refactored ATM simulation with modular JS classes.",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "atm",
+    "simulation",
+    "microprocessor",
+    "refactor"
+  ],
+  "author": "Antigravity",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

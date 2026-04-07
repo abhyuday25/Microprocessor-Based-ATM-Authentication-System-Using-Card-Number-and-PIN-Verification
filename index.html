@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATM Auth System — Microprocessor Simulation</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0;}
+    :root{
+      --bg:#0a0f1a;--surface:#0f1623;--surface2:#141d2e;--border:#1e2d45;--border2:#243350;
+      --green:#00e87a;--green2:rgba(0,232,122,0.12);--red:#ff3a5c;--red2:rgba(255,58,92,0.12);
+      --amber:#ffaa00;--blue:#00aaff;--text:#b8cce0;--dim:#3a5068;--muted:#1e2d3d;
+      --lcd-bg:#0a1a0a;--lcd-on:#7fff44;
+    }
+    body{
+      background:
+        /* Large microprocessor chips */
+        radial-gradient(circle 80px at 15% 20%, rgba(30,45,69,0.4) 0%, transparent 100%),
+        radial-gradient(circle 100px at 85% 30%, rgba(30,45,69,0.5) 0%, transparent 100%),
+        radial-gradient(circle 90px at 25% 75%, rgba(30,45,69,0.45) 0%, transparent 100%),
+        radial-gradient(circle 70px at 90% 80%, rgba(30,45,69,0.4) 0%, transparent 100%),
+        /* Main circuit board pattern */
+        repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(0,232,122,0.15) 61px, transparent 62px),
+        repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(0,232,122,0.15) 61px, transparent 62px),
+        repeating-linear-gradient(0deg, transparent, transparent 120px, rgba(0,170,255,0.12) 121px, transparent 122px),
+        repeating-linear-gradient(90deg, transparent, transparent 120px, rgba(0,170,255,0.12) 121px, transparent 122px),
+        var(--bg);
+      font-family:'Share Tech Mono',monospace;
+      color:var(--text);
+      padding:0;
+      overflow-x:hidden;
+      position:relative;
+    }
+    body::before{
+      content:'';
+      position:fixed;
+      top:0;
+      left:0;
+      right:0;
+      bottom:0;
+      /* Circuit connection nodes */
+      background-image:
+        radial-gradient(circle 3px at 10% 15%, var(--green) 0%, transparent 100%),
+        radial-gradient(circle 3px at 30% 25%, var(--amber) 0%, transparent 100%),
+        radial-gradient(circle 3px at 50% 10%, var(--blue) 0%, transparent 100%),
+        radial-gradient(circle 3px at 70% 20%, var(--green) 0%, transparent 100%),
+        radial-gradient(circle 3px at 85% 35%, var(--amber) 0%, transparent 100%),
+        radial-gradient(circle 3px at 20% 45%, var(--blue) 0%, transparent 100%),
+        radial-gradient(circle 3px at 40% 55%, var(--green) 0%, transparent 100%),
+        radial-gradient(circle 3px at 60% 40%, var(--amber) 0%, transparent 100%),
+        radial-gradient(circle 3px at 80% 60%, var(--blue) 0%, transparent 100%),
+        radial-gradient(circle 3px at 15% 70%, var(--green) 0%, transparent 100%),
+        radial-gradient(circle 3px at 35% 80%, var(--amber) 0%, transparent 100%),
+        radial-gradient(circle 3px at 55% 75%, var(--blue) 0%, transparent 100%),
+        radial-gradient(circle 3px at 75% 85%, var(--green) 0%, transparent 100%),
+        radial-gradient(circle 3px at 90% 70%, var(--amber) 0%, transparent 100%),
+        radial-gradient(circle 3px at 95% 90%, var(--blue) 0%, transparent 100%);
+      pointer-events:none;
+      z-index:0;
+      opacity:0.25;
+    }
+    body::after{
+      content:'⬡ 8051 ⬡ ATmega328P ⬡ ARM Cortex ⬡ PIC16F ⬡ ESP32 ⬡ STM32 ⬡ Arduino ⬡ Raspberry Pi ⬡';
+      position:fixed;
+      bottom:10px;
+      left:0;
+      right:0;
+      text-align:center;
+      font-size:0.5rem;
+      color:rgba(0,232,122,0.15);
+      letter-spacing:0.3em;
+      pointer-events:none;
+      z-index:0;
+      font-family:'Share Tech Mono',monospace;
+    }
+    .wrap{max-width:920px;margin:0 auto;padding:20px 14px 40px;position:relative;z-index:1;}
+    .hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:10px;}
+    .hdr-l{display:flex;align-items:center;gap:12px;}
+    .hex{width:36px;height:36px;background:var(--green2);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--green);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);}
+    .brand{font-family:'Orbitron',monospace;font-size:clamp(.8rem,2.5vw,1.05rem);color:var(--green);letter-spacing:.16em;}
+    .sub{font-size:.56rem;color:var(--dim);letter-spacing:.18em;margin-top:2px;}
+    .badges{display:flex;gap:7px;flex-wrap:wrap;align-items:center;}
+    .badge{font-size:.52rem;padding:3px 9px;border-radius:3px;border:1px solid;letter-spacing:.14em;font-family:'Share Tech Mono',monospace;}
+    .bg{color:var(--green);border-color:var(--green);background:var(--green2);}
+    .ba{color:var(--amber);border-color:var(--amber);background:rgba(255,170,0,.1);}
+    .br{color:var(--red);border-color:var(--red);background:var(--red2);}
+
+    .voice-bar{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+    .voice-icon{width:28px;height:28px;border-radius:50%;background:var(--green2);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+    .voice-status{font-size:.62rem;color:var(--text);letter-spacing:.12em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .voice-wave{display:flex;align-items:center;gap:2px;height:20px;flex-shrink:0;}
+    .wbar{width:3px;border-radius:2px;background:var(--green);opacity:.3;transition:height .1s,opacity .1s;}
+    .wbar.active{opacity:1;}
+    .vtoggle{background:transparent;border:1px solid var(--border2);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:.56rem;letter-spacing:.14em;padding:5px 10px;border-radius:4px;cursor:pointer;transition:all .18s;flex-shrink:0;}
+    .vtoggle:hover{border-color:var(--green);color:var(--green);}
+    .vtoggle.muted{border-color:var(--red);color:var(--red);}
+
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+    .span2{grid-column:1/-1;}
+    @media(max-width:580px){.grid{grid-template-columns:1fr;}.span2{grid-column:1;}}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative;overflow:hidden;animation:fadeUp .5s ease both;}
+    .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--green),transparent);opacity:.2;}
+    .clabel{font-size:.54rem;letter-spacing:.2em;color:var(--dim);margin-bottom:13px;display:flex;align-items:center;gap:7px;}
+    .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+    .dg{background:var(--green);box-shadow:0 0 5px var(--green);}
+    .da{background:var(--amber);}.db{background:var(--blue);}.dd{background:var(--dim);}
+
+    .banner{border-radius:8px;padding:13px 18px;font-family:'Orbitron',monospace;font-size:.68rem;letter-spacing:.16em;text-align:center;border:1px solid transparent;display:none;justify-content:center;align-items:center;gap:10px;}
+    .banner.ok{display:flex;background:var(--green2);border-color:var(--green);color:var(--green);animation:slideDown .3s ease;}
+    .banner.no{display:flex;background:var(--red2);border-color:var(--red);color:var(--red);animation:shakeX .4s ease;}
+
+    .lcd-bezel{background:#081008;border:3px solid #162a16;border-radius:6px;padding:13px 15px;}
+    .lcd-screen{background:var(--lcd-bg);border:2px solid #0f1f0f;border-radius:3px;padding:11px 13px;position:relative;overflow:hidden;min-height:76px;display:flex;flex-direction:column;justify-content:center;gap:3px;}
+    .lcd-lines{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.15) 4px);pointer-events:none;}
+    .lcd-row{font-size:clamp(.9rem,2.8vw,1.3rem);letter-spacing:.1em;color:#0a150a;white-space:pre;overflow:hidden;line-height:1.5;transition:color .15s;}
+    .lcd-row.lit{color:var(--lcd-on);text-shadow:0 0 6px rgba(127,255,68,.5);}
+    .lcd-foot{display:flex;align-items:center;gap:9px;margin-top:9px;}
+    .knob{width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#363636,#161616);border:2px solid #2a2a2a;display:flex;align-items:center;justify-content:center;}
+    .kmark{width:2px;height:6px;background:var(--amber);border-radius:1px;margin-bottom:4px;}
+    .lcd-note{font-size:.54rem;color:var(--dim);letter-spacing:.12em;}
+
+    .hw-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+    .hw-item{flex:1;min-width:72px;display:flex;flex-direction:column;align-items:center;gap:7px;}
+    .hw-lbl{font-size:.52rem;letter-spacing:.15em;color:var(--dim);text-align:center;}
+    .hw-val{font-size:.57rem;letter-spacing:.1em;color:var(--dim);transition:color .3s;text-align:center;}
+    .hw-div{width:1px;background:var(--border2);align-self:stretch;}
+    .led{width:28px;height:34px;border-radius:50% 50% 45% 45%;background:radial-gradient(ellipse at 50% 30%,#1a1a1a,#080808);border:2px solid #1e1e1e;transition:all .3s;}
+    .led.on{background:radial-gradient(ellipse at 40% 35%,#aaffcc,#00cc66);border-color:var(--green);animation:ledP 1.5s ease-in-out infinite;}
+    .led-legs{display:flex;gap:5px;margin-top:-1px;}
+    .leg{width:2px;height:11px;background:#2a2a2a;}
+    .buz-wrap{position:relative;width:56px;height:46px;display:flex;align-items:center;justify-content:center;}
+    .buz{position:relative;display:flex;align-items:center;justify-content:center;}
+    .buz-body{width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#2e2e2e,#0e0e0e);border:3px solid #222;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;transition:border-color .2s;}
+    .buz-hole{width:11px;height:11px;border-radius:50%;background:#040809;border:1px solid #282828;}
+    .buz.active .buz-body{border-color:var(--red);box-shadow:0 0 10px 3px rgba(255,58,92,.4);animation:bshake .1s infinite;}
+    .rings{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1;}
+    .ring{position:absolute;border:1.5px solid var(--red);border-radius:50%;opacity:0;transform:translate(-50%,-50%);}
+    .r1{width:50px;height:50px;}.r2{width:66px;height:66px;}.r3{width:82px;height:82px;}
+    .buz.active .r1{animation:ring .6s ease-out infinite 0s;}
+    .buz.active .r2{animation:ring .6s ease-out infinite .15s;}
+    .buz.active .r3{animation:ring .6s ease-out infinite .3s;}
+    .pot-body{width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#303030,#121212);border:2px solid #1e1e1e;display:flex;align-items:center;justify-content:center;}
+    .pot-inner{width:21px;height:21px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#444,#222);border:1px solid #363636;display:flex;align-items:flex-start;justify-content:center;padding-top:2px;animation:potS 5s linear infinite;}
+    .pot-mark2{width:2px;height:6px;background:var(--amber);border-radius:1px;}
+    .pot-pins{display:flex;gap:4px;font-size:.48rem;color:var(--dim);}
+
+    .pin-map{display:grid;grid-template-columns:1fr 1fr;gap:3px;}
+    .pin-row{display:flex;justify-content:space-between;font-size:.57rem;border-bottom:1px solid var(--muted);padding:3px 4px;transition:background .3s;}
+    .pin-row.hi{background:rgba(0,232,122,.08);}
+    .pin-row.hi .pf{color:var(--green);}
+    .pn{color:var(--amber);}.pf{color:var(--text);}
+
+    /* Serial */
+    .sout{background:#030609;border:1px solid var(--border);border-radius:5px;height:140px;overflow-y:auto;padding:9px;font-size:.65rem;line-height:1.75;margin-bottom:9px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent;}
+    .sl{font-family:'Share Tech Mono',monospace;}
+    .sl.sys{color:var(--muted);}.sl.tx{color:var(--amber);}.sl.ok{color:var(--green);}.sl.no{color:var(--red);}
+
+    /* Input area — key update for real-world format */
+    .in-row{display:flex;gap:7px;align-items:flex-end;flex-wrap:wrap;}
+    .field{display:flex;flex-direction:column;gap:3px;flex:1;min-width:120px;}
+    .field.sm{flex:0 0 110px;}
+    .flbl{font-size:.52rem;letter-spacing:.15em;color:var(--dim);}
+    .finput{background:#030609;border:1px solid var(--border2);border-radius:4px;color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:.88rem;padding:8px 10px;width:100%;outline:none;transition:border-color .2s;letter-spacing:.08em;}
+    .finput:focus{border-color:var(--green);box-shadow:0 0 0 2px rgba(0,232,122,.08);}
+    .finput.error{border-color:var(--red);}
+    .finput.ok{border-color:var(--green);}
+    .fhint{font-size:.5rem;color:var(--dim);letter-spacing:.12em;margin-top:2px;}
+    /* PIN dots display */
+    .pin-dots{display:flex;gap:6px;margin-top:4px;}
+    .pdot{width:9px;height:9px;border-radius:50%;border:1px solid var(--dim);background:transparent;transition:all .2s;}
+    .pdot.filled{background:var(--amber);border-color:var(--amber);}
+
+    .send{background:transparent;border:1px solid var(--green);color:var(--green);font-family:'Orbitron',monospace;font-size:.56rem;letter-spacing:.16em;padding:8px 14px;border-radius:4px;cursor:pointer;transition:all .18s;white-space:nowrap;align-self:flex-end;}
+    .send:hover{background:var(--green);color:#000;}
+    .send:active{transform:scale(.96);}
+    .clr{background:transparent;border:1px solid var(--border2);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:.56rem;letter-spacing:.12em;padding:8px 10px;border-radius:4px;cursor:pointer;transition:all .18s;align-self:flex-end;}
+    .clr:hover{color:var(--text);}
+
+    /* Ref grid — wider for 10-digit cards */
+    .ref-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:5px;margin-bottom:7px;}
+    .ref-item{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:6px 9px;font-size:.6rem;cursor:pointer;transition:all .15s;}
+    .ref-item:hover{border-color:var(--green);background:var(--green2);}
+    .rcard{color:var(--amber);font-size:.68rem;letter-spacing:.06em;font-family:'Share Tech Mono',monospace;}
+    .rpin{color:var(--dim);font-size:.56rem;margin-top:2px;}
+    .rtip{font-size:.54rem;color:var(--muted);}
+
+    .cdiag{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;}
+    .cblk{border:1px solid;border-radius:6px;padding:7px 14px;text-align:center;font-size:.62rem;letter-spacing:.09em;min-width:190px;transition:all .3s;}
+    .ci{border-color:var(--amber);color:var(--amber);background:rgba(255,170,0,.06);}
+    .cl{border-color:var(--blue);color:var(--blue);background:rgba(0,170,255,.06);}
+    .cg{border-color:var(--green);color:var(--green);background:var(--green2);}
+    .cr{border-color:var(--red);color:var(--red);background:var(--red2);}
+    .cblk.glow-g{box-shadow:0 0 12px rgba(0,232,122,.28);}
+    .cblk.glow-r{box-shadow:0 0 12px rgba(255,58,92,.28);}
+    .cblk.glow-l{box-shadow:0 0 12px rgba(0,170,255,.22);}
+    .carr{color:var(--dim);font-size:.95rem;line-height:1.1;}
+    .cout{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;}
+
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
+    @media(max-width:380px){.stats{grid-template-columns:repeat(2,1fr);}}
+    .stat{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:11px 7px;text-align:center;}
+    .sv{font-family:'Orbitron',monospace;font-size:1.35rem;font-weight:700;color:var(--text);line-height:1;margin-bottom:4px;}
+    .sv.g{color:var(--green);}.sv.r{color:var(--red);}
+    .slb{font-size:.5rem;letter-spacing:.16em;color:var(--dim);}
+
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes slideDown{from{opacity:0;transform:translateY(-7px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes shakeX{0%,100%{transform:translateX(0);}25%,75%{transform:translateX(-5px);}50%{transform:translateX(5px);}}
+    @keyframes ledP{0%,100%{box-shadow:0 0 12px 4px rgba(0,232,122,.4);}50%{box-shadow:0 0 20px 8px rgba(0,232,122,.65);}}
+    @keyframes ring{0%{opacity:.75;transform:translate(-50%,-50%) scale(.5);}100%{opacity:0;transform:translate(-50%,-50%) scale(1);}}
+    @keyframes bshake{0%,100%{transform:scale(1);}50%{transform:scale(1.07);}}
+    @keyframes potS{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+    @keyframes waveAnim{0%,100%{height:4px;}50%{height:16px;}}
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="hdr">
+    <div class="hdr-l">
+      <div class="hex">⬡</div>
+      <div>
+        <div class="brand">ATM AUTH SYSTEM</div>
+        <div class="sub">10-digit Card · 4-digit PIN · Voice Enabled</div>
+      </div>
+    </div>
+    <div class="badges">
+      <span class="badge bg">SIMULATION ACTIVE</span>
+      <span class="badge ba" id="aBadge">0 ATTEMPTS</span>
+      <span class="badge bg" id="voiceBadge">🔊 VOICE ON</span>
+    </div>
+  </div>
+
+  <!-- Voice bar -->
+  <div class="voice-bar">
+    <div class="voice-icon" id="vIcon">🔊</div>
+    <div class="voice-status" id="vStatus">Voice engine ready — Web Speech API active</div>
+    <div class="voice-wave" id="vWave">
+      <div class="wbar" style="height:4px"></div><div class="wbar" style="height:8px"></div>
+      <div class="wbar" style="height:4px"></div><div class="wbar" style="height:12px"></div>
+      <div class="wbar" style="height:6px"></div><div class="wbar" style="height:4px"></div>
+      <div class="wbar" style="height:10px"></div><div class="wbar" style="height:4px"></div>
+    </div>
+    <button class="vtoggle" id="vToggle" onclick="Voice.toggle()">MUTE</button>
+  </div>
+
+  <div class="grid">
+
+    <div class="banner span2" id="banner"></div>
+
+    <!-- LCD -->
+    <div class="card span2" style="animation-delay:.05s">
+      <div class="clabel"><span class="dot dg"></span>16×2 LCD DISPLAY · LiquidCrystal(7, 6, 5, 4, 3, 2)</div>
+      <div class="lcd-bezel">
+        <div class="lcd-screen">
+          <div class="lcd-lines"></div>
+          <div class="lcd-row lit" id="r0">ATM AUTH SYSTEM </div>
+          <div class="lcd-row lit" id="r1">Enter Card+PIN  </div>
+        </div>
+        <div class="lcd-foot">
+          <div class="knob"><div class="kmark"></div></div>
+          <span class="lcd-note">V0 CONTRAST · Potentiometer middle pin → LCD Pin 3</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hardware -->
+    <div class="card" style="animation-delay:.1s">
+      <div class="clabel"><span class="dot da"></span>HARDWARE OUTPUT · GPIO PINS</div>
+      <div class="hw-row">
+        <div class="hw-item">
+          <div class="hw-lbl">LED · PIN 13</div>
+          <div class="led" id="led"></div>
+          <div class="led-legs"><div class="leg"></div><div class="leg"></div></div>
+          <div class="hw-val" id="ledV">OFF</div>
+        </div>
+        <div class="hw-div"></div>
+        <div class="hw-item">
+          <div class="hw-lbl">BUZZER · PIN 8</div>
+          <div class="buz-wrap">
+            <div class="buz" id="buz">
+              <div class="buz-body"><div class="buz-hole"></div></div>
+              <div class="rings"><div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div></div>
+            </div>
+          </div>
+          <div class="hw-val" id="buzV">SILENT</div>
+        </div>
+        <div class="hw-div"></div>
+        <div class="hw-item">
+          <div class="hw-lbl">POT · 10KΩ</div>
+          <div class="pot-body"><div class="pot-inner"><div class="pot-mark2"></div></div></div>
+          <div class="pot-pins"><span>5V</span><span>V0</span><span>GND</span></div>
+          <div class="hw-val">CONTRAST</div>
+        </div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;">
+        <div class="clabel" style="margin-bottom:7px;"><span class="dot dd"></span>WIRING MAP</div>
+        <div class="pin-map" id="pinMap"></div>
+      </div>
+    </div>
+
+    <!-- Serial Monitor -->
+    <div class="card" style="animation-delay:.15s">
+      <div class="clabel"><span class="dot db"></span>SERIAL MONITOR · 9600 BAUD</div>
+      <div class="sout" id="sOut"></div>
+      <div class="in-row">
+        <div class="field">
+          <span class="flbl">CARD NUMBER (10 digits)</span>
+          <input class="finput" type="text" id="cIn" placeholder="e.g. 4111111111" maxlength="10" inputmode="numeric"/>
+          <span class="fhint" id="cHint">0 / 10 digits</span>
+        </div>
+        <div class="field sm">
+          <span class="flbl">PIN (4 digits)</span>
+          <input class="finput" type="password" id="pIn" placeholder="••••" maxlength="4" inputmode="numeric"/>
+          <div class="pin-dots" id="pinDots">
+            <div class="pdot"></div><div class="pdot"></div><div class="pdot"></div><div class="pdot"></div>
+          </div>
+        </div>
+        <button class="send" onclick="ATM.send()">▶ SEND</button>
+        <button class="clr" onclick="ATM.clearLog()">CLR</button>
+      </div>
+    </div>
+
+    <!-- Card Database -->
+    <div class="card" style="animation-delay:.2s">
+      <div class="clabel"><span class="dot dd"></span>CARD DATABASE · 20 CUSTOMERS · CLICK TO AUTOFILL</div>
+      <div class="ref-grid" id="refGrid"></div>
+      <div class="rtip">⚠ Any other combination → DENIED + buzzer + voice alert</div>
+    </div>
+
+    <!-- Circuit diagram -->
+    <div class="card" style="animation-delay:.25s">
+      <div class="clabel"><span class="dot dg"></span>CIRCUIT BLOCK DIAGRAM</div>
+      <div class="cdiag">
+        <div class="cblk ci">⌨ Input — Serial Monitor<br><small style="font-size:.54rem;opacity:.7">10-digit card + 4-digit PIN</small></div>
+        <div class="carr">↓</div>
+        <div class="cblk cl" id="cdLogic">⚙ Authorization Logic<br><small style="font-size:.54rem;opacity:.7">for-loop · cardDB[] · pinDB[]</small></div>
+        <div class="carr">↓</div>
+        <div class="cout">
+          <div class="cblk cg" id="cdG">💡 LED ON · Pin 13<br>🖥 LCD "ACCESS GRANTED"<br>🔊 Voice + Serial "AUTHORIZED"</div>
+          <div class="cblk cr" id="cdD">🔔 Buzzer · Pin 8<br>🖥 LCD "ACCESS DENIED"<br>🔊 Voice + Serial "DENIED"</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="card span2" style="animation-delay:.3s">
+      <div class="clabel"><span class="dot da"></span>SESSION STATISTICS</div>
+      <div class="stats">
+        <div class="stat"><div class="sv" id="stT">0</div><div class="slb">TOTAL</div></div>
+        <div class="stat"><div class="sv g" id="stG">0</div><div class="slb">GRANTED</div></div>
+        <div class="stat"><div class="sv r" id="stD">0</div><div class="slb">DENIED</div></div>
+        <div class="stat"><div class="sv" id="stR">—</div><div class="slb">SUCCESS %</div></div>
+      </div>
+      <button class="clr" style="margin-top:11px;width:100%" onclick="ATM.resetStats()">RESET STATS</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Peripheral Drivers & Logic -->
+<script src="js/Database.js"></script>
+<script src="js/VoiceController.js"></script>
+<script src="js/LCDDriver.js"></script>
+<script src="js/HardwareInterface.js"></script>
+<script src="js/SerialMonitor.js"></script>
+<script src="js/ATMController.js"></script>
+
+</body>
+</html>
